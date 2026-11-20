@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F6B4F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calorie Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Calories in &amp; gym burn tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F2F5EF;--surface:#FFFFFF;--ink:#1D2822;--muted:#5C6B62;--line:#D8E0D6;
+  --in:#2F6B4F;--burn:#2E6F9E;--danger:#B3382C;--chip:#E6EEE4;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111915;--surface:#1A241E;--ink:#E7EFE9;--muted:#9CAEA3;--line:#2C3A31;
+  --in:#6FC59A;--burn:#7FB8E3;--danger:#EE8A7E;--chip:#24322A;}}
+:root[data-theme="dark"]{--bg:#111915;--surface:#1A241E;--ink:#E7EFE9;--muted:#9CAEA3;--line:#2C3A31;--in:#6FC59A;--burn:#7FB8E3;--danger:#EE8A7E;--chip:#24322A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 56px}
+h1,h2{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;margin:0}
+h1{font-size:clamp(1.9rem,6vw,2.6rem);line-height:1.05;letter-spacing:-.02em}
+h2{font-size:1.2rem;margin-bottom:14px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.date label{display:block;font-size:.8rem;color:var(--muted)}
+input,select,button{font:inherit;color:inherit}
+input:not([type=checkbox]),select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--in);outline-offset:1px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat small{color:var(--muted);display:block}
+.num{font:700 2.6rem/1 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.03em;margin:4px 0 2px}
+.in .num{color:var(--in)}.burn .num{color:var(--burn)}
+.wide{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.wide b{font:700 1.5rem "Bricolage Grotesque",system-ui,sans-serif}
+.wrow{display:flex;align-items:center;gap:8px}
+.wrow input{width:110px!important;font-weight:600;font-size:1.1rem}
+.note{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:18px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:end}
+.grid label.l,label.l{font-size:.85rem;color:var(--muted);display:block;margin-bottom:4px}
+.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}.c2{grid-column:span 2}
+@media(max-width:560px){.c4,.c3,.c2{grid-column:span 6}.c2.half,.c3.half{grid-column:span 3}}
+.btn{border:0;border-radius:8px;padding:11px 16px;font-weight:600;cursor:pointer;background:var(--in);color:var(--bg)}
+.btn.burn{background:var(--burn)}
+.btn.alt{background:transparent;color:var(--in);border:1px solid var(--in)}
+.btn.ghost{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.btn.sm{padding:4px 10px;font-weight:500;font-size:.85rem;background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{color:var(--danger);font-size:.85rem;min-height:1.2em;margin:8px 0 0}
+h3{font-size:.95rem;margin:16px 0 6px;color:var(--muted);font-weight:600}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+.meta{font-size:.85rem;color:var(--muted)}
+.tag{display:inline-block;background:var(--chip);border-radius:999px;padding:1px 10px;font-size:.78rem;margin-right:6px}
+.right{text-align:right;white-space:nowrap}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:var(--bg)}
+.chip input:checked+span{background:var(--burn);color:var(--bg);border-color:var(--burn);font-weight:600}
+.chip input:focus-visible+span{outline:3px solid var(--in);outline-offset:2px}
+.exlist{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.exlist[hidden]{display:none}
+.exlist .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:var(--chip);font-size:.9rem;flex-wrap:wrap}
+.exlist .hd strong{font-weight:600}
+.exlist .hd .mins{display:flex;align-items:center;gap:6px}
+.exlist .hd .mins input{width:80px!important;padding:6px 8px}
+.exlist .hd button.lnk{background:none;border:0;color:var(--in);font-weight:600;cursor:pointer;padding:2px 4px}
+.exlist label.ex{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.exlist input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--in);flex:none}
+.exlist .t{font-weight:500}
+.exlist .g{display:block;font-size:.82rem;color:var(--muted)}
+.est{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--chip);display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.est b{font:700 1.5rem "Bricolage Grotesque",system-ui,sans-serif;color:var(--burn)}
+.foot{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.foot p{flex:1 1 300px;margin:0;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Calories in &amp; gym burn</h1>
+  <div class="date"><label for="date">Tracking date</label><input type="date" id="date"></div>
+</header>
+
+<div class="summary">
+  <div class="stat in"><small>Calories in</small><div class="num" id="kIn">0</div><small>kcal consumed</small></div>
+  <div class="stat burn"><small>Gym burn</small><div class="num" id="kBurn">0</div><small>kcal estimated</small></div>
+  <div class="stat wide">
+    <div><label class="l" for="wt" style="margin:0">Body weight</label><small id="wtNote" style="color:var(--muted)"></small></div>
+    <div class="wrow"><input id="wt" type="number" min="20" max="300" step="0.1" inputmode="decimal" placeholder="0.0"><span>kg</span></div>
+  </div>
+  <div class="stat wide">
+    <div><small>Intake minus recorded gym burn</small><p class="note" style="margin:2px 0 0">This is not your total daily energy balance. It excludes calories your body uses throughout the day.</p></div>
+    <b id="kNet">0 kcal</b>
+  </div>
+</div>
+
+<section class="panel" aria-labelledby="h1a">
+  <h2 id="h1a">Record food intake</h2>
+  <div class="grid">
+    <div class="c2"><label class="l" for="meal">Meal</label>
+      <select id="meal"><option>Breakfast</option><option selected>Lunch</option><option>Dinner</option><option>Snack</option><option>Drink</option></select></div>
+    <div class="c4"><label class="l" for="food">Food description</label><input id="food" placeholder="e.g. Nasi lemak with egg"></div>
+    <div class="c3"><label class="l" for="fcal">Calories (kcal), blank to estimate</label><input id="fcal" type="number" min="0" step="1" inputmode="numeric"></div>
+    <div class="c3 half"><button class="btn alt" id="estFood" style="width:100%">Estimate</button></div>
+    <div class="c3 half"><button class="btn" id="addFood" style="width:100%">Add food</button></div>
+  </div>
+  <p class="note" id="foodNote"></p>
+  <p class="err" id="errF" role="alert"></p>
+</section>
+
+<section class="panel" aria-labelledby="h2a">
+  <h2 id="h2a">Record gym workout</h2>
+  <span class="l" style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:6px">Workouts (select as many as you did)</span>
+  <div class="chips" id="chips" role="group" aria-label="Workouts"></div>
+  <div id="blocks"></div>
+  <div class="grid" style="margin-top:14px">
+    <div class="c2"><label class="l" for="inten">Intensity</label><select id="inten"><option value="light">Light</option><option value="mod" selected>Moderate</option><option value="hard">Hard</option></select></div>
+  </div>
+  <div class="est"><span>Estimated burn<span class="meta" id="estWhy" style="display:block"></span></span><b id="estVal">— kcal</b></div>
+  <div class="grid" style="margin-top:14px">
+    <div class="c4"><label class="l" for="acal">Use my own number instead (optional, kcal)</label><input id="acal" type="number" min="0" step="1" inputmode="numeric"></div>
+    <div class="c2"><button class="btn burn" id="addAct" style="width:100%">Add workout</button></div>
+  </div>
+  <p class="note">The estimate uses MET values (standard activity intensity ratings) × your body weight × the minutes for each workout. It includes calories your body would burn anyway in that time and ignores rest between sets, so treat it as a rough figure. Strength workouts start with every exercise ticked, so untick what you skipped. For cardio, tick what you did.</p>
+  <p class="err" id="errA" role="alert"></p>
+</section>
+
+<section class="panel" aria-labelledby="h3a">
+  <h2 id="h3a">Daily records</h2>
+  <h3>Food</h3><ul id="foodList"></ul>
+  <h3>Gym workouts</h3><ul id="actList"></ul>
+</section>
+
+<div class="foot">
+  <button class="btn ghost" id="clear">Clear today’s records</button>
+  <p>Entries are saved in this browser on this device. Food calories are estimated by Claude from your description, and gym burn is calculated from your weight, time and intensity. Both are estimates, not targets or instructions to compensate for eating.</p>
+</div>
+</main>
+
+<script>
+(function(){
+  var KEY="nutrition-tracker-v1";
+  var $=function(id){return document.getElementById(id)};
+
+  var PUSH=[["Inclined dumbbell press","Upper chest"],["Dumbbell bench press","Whole chest"],["Chest fly","Lower chest"],["Dumbbell lateral raise","Front and middle delts"],["Shoulder press","Front and middle delts"],["Rope pushdown","Outer triceps"],["Overhead rope extension","Long head and underside of triceps"]];
+  var PULL=[["Wide-grip lat pulldown","Mid and lower lats"],["Seated cable row","Lower and mid lats"],["Barbell row","Upper back, mid lats, rear delts"],["Rope face pull","Rear delts and upper traps"],["Seated incline dumbbell curl","Inner biceps"],["Hammer curl","Outer biceps and forearm thickness"],["Cable wrist pulldown","Forearms"]];
+  var LEGS=[["Close-stance goblet squat","Outer legs and abductors"],["Normal-stance goblet squat","Quads, including the teardrop"],["Wide-stance goblet squat","Inner thigh and adductors"],["Side-rear Bulgarian deadlift","Glutes and hamstrings"],["Dumbbell calf raise","Calves"],["Ab crunch","Upper abs"]];
+  var UPPER=[["Inclined dumbbell press","Upper chest"],["Mag-grip lat pulldown","Upper back and traps"],["Dumbbell chest press","Whole chest"],["Barbell row","Upper back, mid lats, rear delts"],["Dumbbell shoulder press","Front and middle delts"],["Rope face pull","Rear delts"],["Preacher dumbbell curl","Biceps and forearms"],["Single-arm cable pushdown, high to low","Whole triceps"]];
+  var CARDIO=[["Treadmill walking","Machine, low impact",3.8],["Incline treadmill walk","Machine, low impact",5.3],["Treadmill jogging or running","Machine",8.3],["Outdoor walking","Low impact",3.8],["Outdoor running","Outdoors",9.8],["Stationary bike","Machine, low impact",7],["Elliptical","Machine, low impact",5],["Rowing machine","Machine, full body",7],["Stair climber","Machine",8.8],["Swimming","Pool",6],["Skipping rope","High impact",11],["HIIT intervals","High intensity",8],["Other cardio","Anything not listed",5]];
+  var W=[
+    {k:"push",l:"Push (chest + triceps)",s:"Push day",ex:PUSH},
+    {k:"pull",l:"Pull (lats + biceps)",s:"Pull day",ex:PULL},
+    {k:"legs",l:"Legs (quads, hamstrings, calves)",s:"Legs",ex:LEGS},
+    {k:"upper",l:"Upper body (chest, back, arms)",s:"Upper body",ex:UPPER},
+    {k:"cardio",l:"Cardio",s:"Cardio",ex:CARDIO,cardio:true}
+  ];
+  var STRENGTH_MET={light:3.5,mod:5,hard:6},CARDIO_MULT={light:0.85,mod:1,hard:1.2};
+  var FOODNOTE="Describe what you ate, including portions if you know them. Claude will estimate the calories, and you can edit the number before adding.";
+
+  var state={days:{}};
+  function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+  function load(){
+    try{var r=localStorage.getItem(KEY);if(r){var s=JSON.parse(r);if(s&&s.days){state=s}}}catch(e){}
+    if(!Object.keys(state.days).length){
+      state.days[today()]={food:[{id:1,meal:"Lunch",desc:"White rice, egg in tomato sauce, sausage chili, broccoli and carrot",kcal:650}],act:[]};
+    }
+    if(state.weight){var t=day(today());if(!t.weight)t.weight=state.weight;delete state.weight}
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+  function day(k){return state.days[k]||(state.days[k]={food:[],act:[]})}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  var cur=today();
+
+  // ---- body weight: this date's weigh-in, else the most recent earlier one
+  function weightInfo(){
+    var own=parseFloat((state.days[cur]||{}).weight);
+    if(own>0)return {kg:own,from:null};
+    var ks=Object.keys(state.days).filter(function(k){return k<cur&&parseFloat(state.days[k].weight)>0}).sort();
+    if(ks.length){var k=ks[ks.length-1];return {kg:parseFloat(state.days[k].weight),from:k}}
+    return {kg:0,from:null};
+  }
+  function showWeightNote(){
+    var w=weightInfo();
+    $("wtNote").textContent=w.from?"Carried over from "+new Date(w.from+"T00:00").toLocaleDateString("en-MY",{day:"numeric",month:"short"})+". Enter today’s to update.":(w.kg?"Weigh-in for this date.":"Enter your weight to estimate gym burn.");
+  }
+
+  // ---- workout builder (blocks are built once so ticks and minutes persist)
+  function build(){
+    $("chips").innerHTML=W.map(function(w){return '<label class="chip"><input type="checkbox" data-w="'+w.k+'"><span>'+esc(w.l)+'</span></label>'}).join("");
+    $("blocks").innerHTML=W.map(function(w){
+      return '<div class="exlist" data-b="'+w.k+'" hidden><div class="hd"><strong>'+esc(w.s)+'</strong><span class="mins"><label for="m-'+w.k+'" class="meta">Minutes</label><input id="m-'+w.k+'" data-m="'+w.k+'" type="number" min="1" step="1" inputmode="numeric"></span>'+
+        '<span><span class="meta" data-cnt="'+w.k+'"></span> <button type="button" class="lnk" data-all="'+w.k+'">Select all</button><button type="button" class="lnk" data-none="'+w.k+'">Clear</button></span></div>'+
+        w.ex.map(function(e,i){return '<label class="ex"><input type="checkbox" data-k="'+w.k+'" data-i="'+i+'"'+(w.cardio?'':' checked')+'><span><span class="t">'+esc(e[0])+'</span><span class="g">'+esc(e[1])+'</span></span></label>'}).join("")+'</div>';
+    }).join("");
+    W.forEach(function(w){count(w.k)});
+  }
+  function wk(k){return W.filter(function(w){return w.k===k})[0]}
+  function boxes(k){return $("blocks").querySelectorAll('input[data-k="'+k+'"]')}
+  function tickedOf(k){var w=wk(k),b=boxes(k),o=[];for(var i=0;i<b.length;i++)if(b[i].checked)o.push(w.ex[i]);return o}
+  function count(k){var n=tickedOf(k).length,t=wk(k).ex.length;document.querySelector('[data-cnt="'+k+'"]').textContent=wk(k).cardio?n+" selected":n+" of "+t+" done"}
+  function selected(){return W.filter(function(w){return document.querySelector('#chips input[data-w="'+w.k+'"]').checked})}
+  function syncBlocks(){
+    W.forEach(function(w){document.querySelector('[data-b="'+w.k+'"]').hidden=!document.querySelector('#chips input[data-w="'+w.k+'"]').checked});
+  }
+
+  // ---- estimate: sum of each selected workout's MET x kg x hours
+  function estimate(){
+    var sel=selected(),kg=weightInfo().kg,lv=$("inten").value,total=0,parts=[];
+    if(!sel.length)return {err:"Choose at least one workout."};
+    if(!(kg>0))return {err:"Enter your body weight above."};
+    for(var i=0;i<sel.length;i++){
+      var w=sel[i],t=tickedOf(w.k),min=parseFloat($("m-"+w.k).value);
+      if(!t.length)return {err:"Tick at least one in "+w.s+"."};
+      if(!(min>0))return {err:"Enter the minutes for "+w.s+"."};
+      var met=w.cardio?t.reduce(function(a,e){return a+e[2]},0)/t.length*CARDIO_MULT[lv]:STRENGTH_MET[lv];
+      total+=met*kg*min/60;
+      parts.push(w.s+" "+met.toFixed(1)+" MET × "+min+" min");
+    }
+    return {kcal:Math.round(total),why:parts.join(" + ")+" × "+kg+" kg"};
+  }
+  function updateEst(){
+    var e=estimate();
+    $("estVal").textContent=e.kcal!=null?e.kcal+" kcal":"— kcal";
+    $("estWhy").textContent=e.kcal!=null?e.why:e.err;
+  }
+
+  function render(){
+    var d=day(cur);
+    var kin=d.food.reduce(function(a,f){return a+f.kcal},0);
+    var kb=d.act.reduce(function(a,f){return a+f.kcal},0);
+    $("kIn").textContent=kin;$("kBurn").textContent=kb;$("kNet").textContent=(kin-kb)+" kcal";
+    $("foodList").innerHTML=d.food.length?d.food.map(function(f){
+      return '<li><div><span class="tag">'+esc(f.meal)+'</span>'+esc(f.desc)+'<div class="meta">'+f.kcal+' kcal</div></div>'+
+      '<div class="right"><button class="btn sm" data-f="'+f.id+'" aria-label="Remove '+esc(f.desc)+'">Remove</button></div></li>'}).join(""):
+      '<li class="empty">No food recorded yet. Add your first meal above.</li>';
+    $("actList").innerHTML=d.act.length?d.act.map(function(a){
+      var title=a.label||a.name||"Workout";
+      var sub=a.exs?'<div class="meta">'+a.exs.map(esc).join(", ")+'</div>':'';
+      return '<li><div><span class="tag">'+esc(title)+'</span>'+(a.min?a.min+' min · ':'')+a.kcal+' kcal'+sub+'</div>'+
+      '<div class="right"><button class="btn sm" data-a="'+a.id+'" aria-label="Remove '+esc(title)+'">Remove</button></div></li>'}).join(""):
+      '<li class="empty">No workout recorded yet.</li>';
+    $("wt").value=(state.days[cur]||{}).weight||"";
+    showWeightNote();updateEst();
+  }
+
+  // ---- food estimate via Claude
+  function parseJSON(t){var m=String(t).match(/\{[\s\S]*\}/);if(!m)return null;try{return JSON.parse(m[0])}catch(e){return null}}
+  async function estimateFood(){
+    var desc=$("food").value.trim();
+    if(!desc){$("errF").textContent="Enter a food description first.";return null}
+    $("errF").textContent="";
+    var sample=null;try{if(window.claude)sample=await claude.use("sample")}catch(e){}
+    if(!sample){$("errF").textContent="Automatic food estimates only work inside Claude. Type the calories yourself here.";return null}
+    var btn=$("estFood");btn.disabled=true;btn.textContent="Estimating…";
+    try{
+      var prompt="Estimate the total calories (kcal) of this meal for one adult. Assume typical Malaysian home-cooked or hawker portion sizes unless the description says otherwise. Meal: \""+desc+"\". Reply with only JSON, no other text, in this shape: {\"kcal\": number, \"items\": [{\"name\": string, \"kcal\": number}], \"assumptions\": \"one short sentence on portion sizes assumed\"}";
+      var r=await sample(prompt,{cache:false,modelTier:"quick"});
+      var j=parseJSON(r.text);
+      if(!j||typeof j.kcal!=="number"||!(j.kcal>=0))throw new Error("bad");
+      var k=Math.round(j.kcal);
+      $("fcal").value=k;
+      var parts=(j.items||[]).map(function(i){return i.name+" ~"+Math.round(i.kcal)}).join(", ");
+      $("foodNote").textContent="Estimated about "+k+" kcal"+(parts?" ("+parts+")":"")+". "+(j.assumptions||"")+" Edit the number if it looks off.";
+      return k;
+    }catch(e){
+      if(e&&e.code==="not_granted")$("errF").textContent="Permission for estimates was declined. Type the calories yourself.";
+      else if(e&&e.code==="rate_limited")$("errF").textContent="Too many estimates just now. Wait a moment and try again.";
+      else $("errF").textContent="Couldn’t estimate that. Add more detail or type the calories yourself.";
+      return null;
+    }finally{btn.disabled=false;btn.textContent="Estimate"}
+  }
+  $("estFood").onclick=estimateFood;
+  $("addFood").onclick=async function(){
+    var desc=$("food").value.trim(),kcal=parseFloat($("fcal").value);
+    if(!desc){$("errF").textContent="Enter a food description.";return}
+    if(isNaN(kcal)){var k=await estimateFood();if(k===null)return;kcal=k}
+    if(kcal<0){$("errF").textContent="Calories can’t be negative.";return}
+    $("errF").textContent="";
+    day(cur).food.push({id:Date.now(),meal:$("meal").value,desc:desc,kcal:Math.round(kcal)});
+    $("food").value="";$("fcal").value="";$("foodNote").textContent=FOODNOTE;
+    save();render();$("food").focus();
+  };
+
+  // ---- add workout (all selected workouts become one record)
+  $("addAct").onclick=function(){
+    var sel=selected(),own=parseFloat($("acal").value),kcal,mins=0,exs=[];
+    if(!sel.length){$("errA").textContent="Choose at least one workout.";return}
+    if(!isNaN(own)&&own>=0){
+      kcal=own;
+      for(var i=0;i<sel.length;i++){var t=tickedOf(sel[i].k);if(!t.length){$("errA").textContent="Tick at least one in "+sel[i].s+".";return}}
+    }else{var e=estimate();if(e.kcal==null){$("errA").textContent=e.err;return}kcal=e.kcal}
+    sel.forEach(function(w){
+      tickedOf(w.k).forEach(function(x){exs.push(x[0])});
+      var m=parseFloat($("m-"+w.k).value);if(m>0)mins+=m;
+    });
+    $("errA").textContent="";
+    day(cur).act.push({id:Date.now(),label:sel.map(function(w){return w.s}).join(" + "),exs:exs,min:Math.round(mins),kcal:Math.round(kcal)});
+    // reset the form
+    $("acal").value="";
+    W.forEach(function(w){
+      document.querySelector('#chips input[data-w="'+w.k+'"]').checked=false;
+      $("m-"+w.k).value="";
+      var b=boxes(w.k);for(var i=0;i<b.length;i++)b[i].checked=!w.cardio;
+      count(w.k);
+    });
+    syncBlocks();save();render();
+  };
+
+  document.addEventListener("click",function(e){
+    var t=e.target;if(!t.dataset)return;
+    if(t.dataset.all||t.dataset.none){var k=t.dataset.all||t.dataset.none,b=boxes(k);for(var i=0;i<b.length;i++)b[i].checked=!!t.dataset.all;count(k);updateEst();return}
+    if(t.dataset.f){var d=day(cur);d.food=d.food.filter(function(f){return String(f.id)!==t.dataset.f});save();render()}
+    if(t.dataset.a){var d2=day(cur);d2.act=d2.act.filter(function(f){return String(f.id)!==t.dataset.a});save();render()}
+  });
+  document.addEventListener("change",function(e){
+    var t=e.target;
+    if(t.dataset&&t.dataset.w){syncBlocks();updateEst()}
+    else if(t.dataset&&t.dataset.k){count(t.dataset.k);updateEst()}
+  });
+  document.addEventListener("input",function(e){if(e.target.dataset&&e.target.dataset.m)updateEst()});
+  $("inten").onchange=updateEst;
+  $("wt").oninput=function(){
+    var d=day(cur),v=$("wt").value;
+    if(v)d.weight=v;else delete d.weight;
+    save();showWeightNote();updateEst();
+  };
+  $("clear").onclick=function(){
+    if(!confirm("Clear all food and workout records for this date? Your body weight stays."))return;
+    var w=day(cur).weight;state.days[cur]={food:[],act:[]};if(w)state.days[cur].weight=w;save();render();
+  };
+  $("date").onchange=function(){if($("date").value){cur=$("date").value;render()}};
+
+  load();build();$("foodNote").textContent=FOODNOTE;
+  $("date").value=cur;render();
+})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
+</body>
+</html>
